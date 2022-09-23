@@ -1,5 +1,10 @@
 module CartesianJoin
+include("functions.jl")
 
-# Write your package code here.
 
+function main1()
+  return "main"
+end
+
+export hello_my_pkg, sum_values
 end
