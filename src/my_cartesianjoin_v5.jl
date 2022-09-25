@@ -1,6 +1,7 @@
 
 ## 内部函数
 import InMemoryDatasets as IMD
+using TimerOutputs
 
 function _test()
   return 1
