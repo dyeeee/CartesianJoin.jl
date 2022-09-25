@@ -54,8 +54,7 @@ function cross_compare_vec(dsl, dsr,
 
     IMD.@_threadsfor threads for j in 1:l_len  # each row in dsl
       cur_index = (j - 1) * l_len
-      _op_for_dsrcol(flag, fun, cur_index, IMD._columns(dsl)[onleft[i]][j], IMD._columns(dsr)[oncols_right=onright
-          [i]], r_len, onleft, onright)
+      _op_for_dsrcol(flag, fun, cur_index, IMD._columns(dsl)[onleft[i]][j], IMD._columns(dsr)[onright[i]], r_len, onleft, onright)
     end
 
   end
