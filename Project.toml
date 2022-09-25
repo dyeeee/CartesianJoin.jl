@@ -3,6 +3,9 @@ uuid = "53bdf068-0a7a-4e29-924d-659363f059ee"
 authors = ["Ye"]
 version = "0.1.0"
 
+[deps]
+InMemoryDatasets = "5c01b14b-ab03-46ff-b164-14c663efdd9f"
+
 [compat]
 julia = "1"
 

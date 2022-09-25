@@ -2,7 +2,7 @@
 
 module CartesianJoin
 
-#using InMemoryDatasets
+using InMemoryDatasets
 
 
 include("main.jl")   # 主函数入口
@@ -20,5 +20,5 @@ function __init__()
 end
 
 
-export _cartesianjoin_test
+export _cartesianjoin_test, cartesianjoin
 end

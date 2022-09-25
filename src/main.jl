@@ -2,8 +2,12 @@
 # 功能对外入口，解析参数后调用内部函数 _
 include("my_cartesianjoin_v5.jl")
 
-#using InMemoryDatasets
+using InMemoryDatasets
 
+
+function cartesianjoin(dsl::AbstractDataset)
+  dsl
+end
 """
 function cartesianjoin(dsl::AbstractDataset,
   dsr::AbstractDataset; on=nothing, makeunique=false,
