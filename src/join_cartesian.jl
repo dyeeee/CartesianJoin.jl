@@ -1,14 +1,18 @@
 
-## 内部函数
+## INNER CALL
 import InMemoryDatasets as IMD
 using TimerOutputs
+include("functions.jl")
 
-function _my_cartesianjoin_v6_pro(dsl::AbstractDataset, dsr::AbstractDataset, conditions, ::Val{T};
+
+
+function _join_cartesian(dsl::AbstractDataset, dsr::AbstractDataset, conditions, ::Val{T};
   onleft, onright, onright_equal, threads::Bool=false, flag=ones(Bool, nrow(dsl) * nrow(dsr)),
   makeunique=false, mapformats=[true, true], check=true,
   multiple_match=[false, false], multiple_match_name=:multiple,
   obs_id=[false, false], obs_id_name=:obs_id) where {T}
 
+  (isempty(dsl) || isempty(dsr)) && throw(ArgumentError("in `cartesianjoin` both left and right tables must be non-empty"))
 
   onleft = onleft
   onright = onright
@@ -26,7 +30,7 @@ function _my_cartesianjoin_v6_pro(dsl::AbstractDataset, dsr::AbstractDataset, co
   ### step-1
   dsl_count = Vector{T}(undef, nrow(dsl))  # left每一行对应几个右边
 
-  find_count_for_left(flag, dsl_count, l_len, r_len)
+  _find_count_for_left(flag, dsl_count, l_len, r_len)
 
   new_ends = cumsum(dsl_count)  # 累计和
   total_length = new_ends[end]
@@ -40,7 +44,7 @@ function _my_cartesianjoin_v6_pro(dsl::AbstractDataset, dsr::AbstractDataset, co
   for j in 1:length(IMD.index(dsl))  # left 的每一列
     _res = IMD.allocatecol(IMD._columns(dsl)[j], total_length, addmissing=false)  # 
 
-    fill_left_res(_res, IMD._columns(dsl)[j], dsl_count, new_ends, threads)
+    _fill_left_res(_res, IMD._columns(dsl)[j], dsl_count, new_ends, threads)
 
     push!(res, _res)
   end
@@ -91,7 +95,7 @@ function _my_cartesianjoin_v6_pro(dsl::AbstractDataset, dsr::AbstractDataset, co
     obs_id_name1 = Symbol(multiple_match_name, "_left")
     obs_id_left = IMD.allocatecol(nrow(dsl) < typemax(Int32) ? Int32 : Int64, total_length)
     # _fill_oncols_left_table_inner!(obs_id_left, 1:nrow(dsl), ranges, new_ends, total_length; inbits=inbits, en2=revised_ends, threads=threads)
-    fill_left_res(obs_id_left, 1:nrow(dsl), dsl_count, new_ends, true)
+    _fill_left_res(obs_id_left, 1:nrow(dsl), dsl_count, new_ends, true)
     insertcols!(newds, ncol(newds) + 1, obs_id_name1 => obs_id_left, unsupported_copy_cols=false, makeunique=makeunique)
   end
 
@@ -107,7 +111,7 @@ function _my_cartesianjoin_v6_pro(dsl::AbstractDataset, dsr::AbstractDataset, co
 end
 
 
-function _my_cartesianjoin_v6(dsl::AbstractDataset, dsr::AbstractDataset, conditions, ::Val{T};
+function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, conditions, ::Val{T};
   onleft, onright, onright_equal, threads::Bool=false, flag=ones(Bool, nrow(dsl) * nrow(dsr)),
   makeunique=false, mapformats=[true, true], check=true,
   multiple_match=[false, false], multiple_match_name=:multiple,
@@ -134,12 +138,10 @@ function _my_cartesianjoin_v6(dsl::AbstractDataset, dsr::AbstractDataset, condit
     @timeit "2-1 left row count" begin
       dsl_count = Vector{T}(undef, nrow(dsl))  # left每一行对应几个右边
 
-      find_count_for_left(flag, dsl_count, l_len, r_len)
+      _find_count_for_left(flag, dsl_count, l_len, r_len)
 
       new_ends = cumsum(dsl_count)  # 累计和
       total_length = new_ends[end]
-
-
     end
 
     if check
@@ -152,7 +154,7 @@ function _my_cartesianjoin_v6(dsl::AbstractDataset, dsr::AbstractDataset, condit
       for j in 1:length(IMD.index(dsl))  # left 的每一列
         @timeit "2.1 init _res" _res = IMD.allocatecol(IMD._columns(dsl)[j], total_length, addmissing=false)  # 
 
-        @timeit "2.2 fill _res" fill_left_res(_res, IMD._columns(dsl)[j], dsl_count, new_ends, threads)
+        @timeit "2.2 fill _res" _fill_left_res(_res, IMD._columns(dsl)[j], dsl_count, new_ends, threads)
 
         @timeit "2.3 push _res" push!(res, _res)
       end
@@ -208,7 +210,7 @@ function _my_cartesianjoin_v6(dsl::AbstractDataset, dsr::AbstractDataset, condit
       obs_id_name1 = Symbol(multiple_match_name, "_left")
       obs_id_left = IMD.allocatecol(nrow(dsl) < typemax(Int32) ? Int32 : Int64, total_length)
       # _fill_oncols_left_table_inner!(obs_id_left, 1:nrow(dsl), ranges, new_ends, total_length; inbits=inbits, en2=revised_ends, threads=threads)
-      fill_left_res(obs_id_left, 1:nrow(dsl), dsl_count, new_ends, true)
+      _fill_left_res(obs_id_left, 1:nrow(dsl), dsl_count, new_ends, true)
       insertcols!(newds, ncol(newds) + 1, obs_id_name1 => obs_id_left, unsupported_copy_cols=false, makeunique=makeunique)
     end
 
@@ -237,18 +239,19 @@ function _cross_compare_vec(dsl, dsr,
 
   for i in eachindex(conditions)  #1:length(conditions)  # Each conditions 每个条件
     fun = conditions[i]
-    l_compare(flag, IMD._columns(dsl)[onleft[i]], IMD._columns(dsr)[onright[i]], l_len, r_len, fun, threads)
+    _left_compare(flag, IMD._columns(dsl)[onleft[i]], IMD._columns(dsr)[onright[i]], l_len, r_len, fun, threads)
   end
 
 end
 
 
-function l_compare(flag, l_col, r_col, l_len, r_len, fun, threads)
+function _left_compare(flag, l_col, r_col, l_len, r_len, fun, threads)
   IMD.@_threadsfor threads for j in 1:l_len  # each row in dsl
     cur_index = (j - 1) * l_len
     _op_for_dsrcol(flag, fun, cur_index, l_col[j], r_col, r_len)
   end
 end
+
 
 function _op_for_dsrcol(flag, fun, cur_index, x, r_col, r_len)
   for k in 1:r_len
@@ -258,7 +261,8 @@ function _op_for_dsrcol(flag, fun, cur_index, x, r_col, r_len)
   end
 end
 
-function find_count_for_left(flag, dsl_count, l_len, r_len)
+
+function _find_count_for_left(flag, dsl_count, l_len, r_len)
   for i in 1:l_len
     lo = 1 + (i - 1) * r_len
     hi = lo + r_len - 1
@@ -267,7 +271,8 @@ function find_count_for_left(flag, dsl_count, l_len, r_len)
   end
 end
 
-function fill_left_res(_res, l_col, dsl_count, new_ends, threads)
+
+function _fill_left_res(_res, l_col, dsl_count, new_ends, threads)
   # x = IMD._columns(dsl)[j] # 这一步可以隔离
   # 左侧填充
   IMD.@_threadsfor threads for i in eachindex(l_col)# 1:length(l_col)
@@ -277,6 +282,7 @@ function fill_left_res(_res, l_col, dsl_count, new_ends, threads)
     IMD._fill_val_join!(_res, lo:hi, l_col[i])
   end
 end
+
 
 function _fill_right_res(_res, r_col, flag, r_len, threads)
   i, e = 1, lastindex(flag)
@@ -300,66 +306,6 @@ function _fill_right_res(_res, r_col, flag, r_len, threads)
     _res[i] = r_col[dsr_idx[i]]
   end
   """
-
-end
-
-function _fill_right_res_2(_res, r_col, flag, r_len, threads)
-  cnt = 1
-  for i in eachindex(flag)  # unable to parallel computingx
-    res = flag[i]
-    res == 0 && continue
-
-    indx = res % r_len == 0 ? r_len : res % r_len # r_len
-    _res[cnt] = r_col[indx]
-    cnt += 1
-  end
 end
 
 
-function _create_multiple_match_col_cartesian(dsl_count, en, total_length)
-  res = IMD.allocatecol(Bool, total_length)
-  cnt = 0
-  # en to handle range, -- 到时候看看我这样会不会有什么问题
-  if en === nothing
-    for i in 1:length(dsl_count)
-      if dsl_count[i] == 0
-        nothing
-      else
-        if dsl_count[i] == 1
-          cnt += 1
-          res[cnt] = false
-        else
-          for j in 1:dsl_count[i]
-            cnt += 1
-            res[cnt] = true
-          end
-        end
-      end
-    end
-  end
-
-  res
-end
-
-Base.@propagate_inbounds function _fill_val_join!(x, r, val)
-  @simd for i in r
-    x[i] = val
-  end
-end
-
-function _get_dsr_idx(flag, dsl_count, l_len, r_len, new_ends)
-  dsr_idx = findall(BitVector(flag))
-  for i in 1:l_len
-    dsl_count[i] == 0 && continue
-
-    i == 1 ? lo = 1 : lo = new_ends[i-1] + 1
-    hi = new_ends[i]
-
-    dsr_idx[lo:hi] .-= (i - 1) * r_len
-    #for k in lo:hi
-    #    all[k] -= (i-1)*r_len
-    #end
-  end
-
-  dsr_idx
-end

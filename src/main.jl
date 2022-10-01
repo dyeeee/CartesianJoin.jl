@@ -1,17 +1,14 @@
 
 # 功能对外入口，解析参数后调用内部函数 _
-include("my_cartesianjoin_v6.jl")
+
 
 using InMemoryDatasets
+using Revise
+
+include("join_cartesian.jl")
 
 function _cartesianjoin_test()
-
-
   _test()
-
-
-
-
 end
 
 function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
@@ -75,12 +72,11 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
     throw(ArgumentError("error `on`"))
   end
 
-  _my_cartesianjoin_v6(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
+  _join_cartesian_timer(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
     onleft=onleft, onright=onright, onright_equal=onright_equal, threads=threads,
     makeunique=makeunique, mapformats=mapformats, check=check,
     multiple_match=multiple_match, multiple_match_name=multiple_match_name,
     obs_id=obs_id, obs_id_name=obs_id_name)
-
 
 end
 
