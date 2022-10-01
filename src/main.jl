@@ -1,6 +1,6 @@
 
 # 功能对外入口，解析参数后调用内部函数 _
-include("my_cartesianjoin_v5.jl")
+include("my_cartesianjoin_v6.jl")
 
 using InMemoryDatasets
 
@@ -17,7 +17,8 @@ end
 function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
   on=nothing, threads::Bool=true,
   makeunique=false, mapformats::Union{Bool,Vector{Bool}}=true,
-  check=true, multiple_match::Bool=false, multiple_match_name=:multiple,
+  check=true,
+  multiple_match::Union{Bool,Vector{Bool}}=false, multiple_match_name=:multiple,
   obs_id::Union{Bool,Vector{Bool}}=false, obs_id_name=:obs_id)
 
 
@@ -31,6 +32,11 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
     mapformats = repeat([mapformats], 2)
   else
     length(mapformats) !== 2 && throw(ArgumentError("`mapformats` must be a Bool or a vector of Bool with size two"))
+  end
+  if !(multiple_match isa AbstractVector)
+    multiple_match = repeat([multiple_match], 2)
+  else
+    length(multiple_match) !== 2 && throw(ArgumentError("`multiple_match` must be a Bool or a vector of Bool with size two"))
   end
   if !(obs_id isa AbstractVector)
     obs_id = repeat([obs_id], 2)
@@ -69,7 +75,7 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
     throw(ArgumentError("error `on`"))
   end
 
-  _my_cartesianjoin_v5(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
+  _my_cartesianjoin_v6(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
     onleft=onleft, onright=onright, onright_equal=onright_equal, threads=threads,
     makeunique=makeunique, mapformats=mapformats, check=check,
     multiple_match=multiple_match, multiple_match_name=multiple_match_name,

@@ -22,7 +22,7 @@ end
 function _my_cartesianjoin_v5(dsl::AbstractDataset, dsr::AbstractDataset, conditions, ::Val{T};
   onleft, onright, onright_equal, threads::Bool=false, flag=ones(Bool, nrow(dsl) * nrow(dsr)),
   makeunique=false, mapformats=[true, true], check=true,
-  multiple_match=false, multiple_match_name=:multiple,
+  multiple_match=[false, false], multiple_match_name=:multiple,
   obs_id=[false, false], obs_id_name=:obs_id) where {T}
 
   reset_timer!()
@@ -59,9 +59,6 @@ function _my_cartesianjoin_v5(dsl::AbstractDataset, dsr::AbstractDataset, condit
     if check
       @assert total_length < 10 * nrow(dsl) "the output data set will be very large ($(total_length)×$(ncol(dsl)+length(right_cols))) compared to the left data set size ($(nrow(dsl))×$(ncol(dsl))), make sure that the `on` keyword is selected properly, alternatively, pass `check = false` to ignore this error."
     end
-    if multiple_match
-      multiple_match_col = _create_multiple_match_col_cartesian(dsl_count, nothing, total_length)
-    end
 
     ### step-2
     @timeit "2-2 left row _res" begin
@@ -88,7 +85,7 @@ function _my_cartesianjoin_v5(dsl::AbstractDataset, dsr::AbstractDataset, condit
     #println("Cerating right")
     @timeit "2-4 findall dsr idx" begin
       ### step-4
-      @timeit "4.1 findall func" dsr_idx = findall(isone, flag)  # 全局索引，要去做出局部索引
+      @timeit "4.1 findall func" dsr_idx = findall(BitVector(flag))
       for i in 1:l_len
         dsl_count[i] == 0 && continue
 
@@ -120,26 +117,35 @@ function _my_cartesianjoin_v5(dsl::AbstractDataset, dsr::AbstractDataset, condit
 
 
 
-    @timeit "2-6 parameters" begin
-
-      if multiple_match
-        insertcols!(newds, ncol(newds) + 1, multiple_match_name => multiple_match_col, unsupported_copy_cols=false, makeunique=makeunique)
-      end
-      """
-      if obs_id[1]
-        obs_id_name1 = Symbol(obs_id_name, "_left")
-        obs_id_left = allocatecol(nrow(dsl) < typemax(Int32) ? Int32 : Int64, total_length)
-        _fill_oncols_left_table_inner!(obs_id_left, 1:nrow(dsl), ranges, new_ends, total_length; inbits=inbits, en2=revised_ends, threads=threads)
-        insertcols!(newds, ncol(newds) + 1, obs_id_name1 => obs_id_left, unsupported_copy_cols=false, makeunique=makeunique)
-      end
-      if obs_id[2]
-        obs_id_name2 = Symbol(obs_id_name, "_right")
-        obs_id_right = allocatecol(T, total_length)
-        _fill_right_cols_table_inner!(obs_id_right, idx, ranges, new_ends, total_length; inbits=inbits, en2=revised_ends, threads=threads)
-        insertcols!(newds, ncol(newds) + 1, obs_id_name2 => obs_id_right, unsupported_copy_cols=false, makeunique=makeunique)
-      end
-      """
+    if multiple_match[1]
+      multiple_match_name1 = Symbol(multiple_match_name, "_left")
+      multiple_match_col_left = _create_multiple_match_col_cartesian(dsl_count, nothing, total_length)
+      insertcols!(newds, ncol(newds) + 1, multiple_match_name1 => multiple_match_col_left, unsupported_copy_cols=false, makeunique=makeunique)
     end
+
+
+    if multiple_match[2]
+      multiple_match_name2 = Symbol(multiple_match_name, "_right")
+      multiple_match_col_right = map(x -> count(==(x), dsr_idx) > 1 ? 1 : 0, dsr_idx)
+      insertcols!(newds, ncol(newds) + 1, multiple_match_name2 => multiple_match_col_right, unsupported_copy_cols=false, makeunique=makeunique)
+    end
+
+
+    if obs_id[1]
+      obs_id_name1 = Symbol(multiple_match_name, "_left")
+      obs_id_left = IMD.allocatecol(nrow(dsl) < typemax(Int32) ? Int32 : Int64, total_length)
+      # _fill_oncols_left_table_inner!(obs_id_left, 1:nrow(dsl), ranges, new_ends, total_length; inbits=inbits, en2=revised_ends, threads=threads)
+      fill_left_res(obs_id_left, 1:nrow(dsl), dsl_count, new_ends, true)
+      insertcols!(newds, ncol(newds) + 1, obs_id_name1 => obs_id_left, unsupported_copy_cols=false, makeunique=makeunique)
+    end
+
+    if obs_id[2]
+      obs_id_name2 = Symbol(obs_id_name, "_right")
+      obs_id_right = dsr_idx#allocatecol(T, total_length)
+      #_fill_right_cols_table_inner!(obs_id_right, idx, ranges, new_ends, total_length; inbits=inbits, en2=revised_ends, threads=threads)
+      insertcols!(newds, ncol(newds) + 1, obs_id_name2 => obs_id_right, unsupported_copy_cols=false, makeunique=makeunique)
+    end
+
 
 
 
@@ -208,7 +214,7 @@ end
 function _create_multiple_match_col_cartesian(dsl_count, en, total_length)
   res = IMD.allocatecol(Bool, total_length)
   cnt = 0
-  # en to handle range, 到时候看看我这样会不会有什么问题
+  # en to handle range, -- 到时候看看我这样会不会有什么问题
   if en === nothing
     for i in 1:length(dsl_count)
       if dsl_count[i] == 0
@@ -250,4 +256,10 @@ else
   end
 
   res
+end
+
+Base.@propagate_inbounds function _fill_val_join!(x, r, val)
+  @simd for i in r
+    x[i] = val
+  end
 end
