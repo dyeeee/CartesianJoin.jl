@@ -132,7 +132,7 @@ function _my_cartesianjoin_v5(dsl::AbstractDataset, dsr::AbstractDataset, condit
 
 
     if obs_id[1]
-      obs_id_name1 = Symbol(multiple_match_name, "_left")
+      obs_id_name1 = Symbol(obs_id_name, "_left")
       obs_id_left = IMD.allocatecol(nrow(dsl) < typemax(Int32) ? Int32 : Int64, total_length)
       # _fill_oncols_left_table_inner!(obs_id_left, 1:nrow(dsl), ranges, new_ends, total_length; inbits=inbits, en2=revised_ends, threads=threads)
       fill_left_res(obs_id_left, 1:nrow(dsl), dsl_count, new_ends, true)
