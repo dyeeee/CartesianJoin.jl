@@ -62,14 +62,14 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
         push!(equalon_dsr_cols, element)
         push!(conditions, isequal)
       else
-        throw(ArgumentError("error `on`"))
+        throw(ArgumentError("error `on`, e.g. on  = [:xid => :yid, :x1 => :y1 => isless]"))
       end
     end
     onleft = IMD.multiple_getindex(IMD.index(dsl), map(x -> x.first, on))
     onright = IMD.multiple_getindex(IMD.index(dsr), dsr_cols)
     onright_equal = IMD.multiple_getindex(IMD.index(dsr), equalon_dsr_cols)
   else
-    throw(ArgumentError("error `on`"))
+    throw(ArgumentError("error `on`, e.g. on  = [:xid => :yid, :x1 => :y1 => isless]"))
   end
 
   _join_cartesian_timer(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
