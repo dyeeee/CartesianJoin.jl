@@ -22,7 +22,7 @@ function _join_cartesian(dsl::AbstractDataset, dsr::AbstractDataset, conditions,
   r_len = nrow(dsr)
 
   # get flag
-  _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads)
+  _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
   #cross_compare(dsl,dsr,flag,conditions,onleft,onright,threads)
   #println(flag)
 
@@ -127,7 +127,7 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
   r_len = nrow(dsr)
 
   # get flag
-  @timeit "compute flag vector" _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads)
+  @timeit "compute flag vector" _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
   #cross_compare(dsl,dsr,flag,conditions,onleft,onright,threads)
   #println(flag)
 
@@ -232,14 +232,35 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
 end
 
 function _cross_compare_vec(dsl, dsr,
-  flag, conditions, onleft, onright, l_len, r_len, threads)
+  flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
 
   onleft = onleft
   onright = onright
 
   for i in eachindex(conditions)  #1:length(conditions)  # Each conditions 每个条件
     fun = conditions[i]
-    _left_compare(flag, IMD._columns(dsl)[onleft[i]], IMD._columns(dsr)[onright[i]], l_len, r_len, fun, threads)
+
+    var_l = IMD._columns(dsl)[onleft[i]]
+    var_r = IMD._columns(dsr)[onright[i]]
+    l_idx = onleft[i]
+    r_idx = onright[i]
+    if mapformats[1]
+      _fl = getformat(dsl, l_idx)
+      val_l_cpy = map(_fl, var_l)
+    else
+      _fl = identity
+      val_l_cpy = var_l
+    end
+    if mapformats[2]
+      _fr = getformat(dsr, r_idx)
+      var_r_cpy = map(_fr, var_r)
+    else
+      _fr = identity
+      var_r_cpy = var_r
+    end
+
+
+    _left_compare(flag, val_l_cpy, var_r_cpy, l_len, r_len, fun, threads)
   end
 
 end

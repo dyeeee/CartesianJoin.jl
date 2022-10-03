@@ -3,8 +3,9 @@
 
 
 using InMemoryDatasets
+using Revise
 
-include("join_cartesian.jl")
+includet("join_cartesian.jl")
 
 function _cartesianjoin_test()
   _test()
@@ -40,14 +41,13 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
     length(obs_id) !== 2 && throw(ArgumentError("`obs_id` must be a Bool or a vector of Bool with size two"))
   end
 
+  #(typeof(on) <: AbstractVector{<:Union{AbstractString, Symbol}})
+
   if (typeof(on) <: AbstractVector{<:Pair{<:IMD.ColumnIndex,<:Any}})
 
     dsr_cols = Symbol[]
     equalon_dsr_cols = Symbol[]
     conditions = Function[]
-
-    #(typeof(on) <: AbstractVector{<:Union{AbstractString, Symbol}})
-    #(typeof(on) <: AbstractVector{<:Pair{<:AbstractString, <:AbstractString}})
 
     # on  = [:xid => :yid, :x1 => :y1 => isless]
     for element in map(x -> x.second, on)
@@ -61,14 +61,14 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
         push!(equalon_dsr_cols, element)
         push!(conditions, isequal)
       else
-        throw(ArgumentError("error `on`, e.g. on  = [:xid => :yid, :x1 => :y1 => isless]"))
+        throw(ArgumentError("error `on`. \n e.g.1 on  = [1 => 1, 2 => 2 => isless] (index for right and left columns)\n e.g.2 on  = [:xid => :yid, :x1 => :y1 => isless]\n e.g.3 on  = [\"xid\" => \"yid\", \"x1\" => \"y1\" => isless]"))
       end
     end
     onleft = IMD.multiple_getindex(IMD.index(dsl), map(x -> x.first, on))
     onright = IMD.multiple_getindex(IMD.index(dsr), dsr_cols)
     onright_equal = IMD.multiple_getindex(IMD.index(dsr), equalon_dsr_cols)
   else
-    throw(ArgumentError("error `on`, e.g. on  = [:xid => :yid, :x1 => :y1 => isless]"))
+    throw(ArgumentError("error `on`. \n e.g.1 on  = [1 => 1, 2 => 2 => isless] (index for right and left columns)\n e.g.2 on  = [:xid => :yid, :x1 => :y1 => isless]\n e.g.3 on  = [\"xid\" => \"yid\", \"x1\" => \"y1\" => isless]"))
   end
 
   _join_cartesian(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
