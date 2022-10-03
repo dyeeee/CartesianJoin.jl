@@ -3,9 +3,9 @@
 
 
 using InMemoryDatasets
-using Revise
+#using Revise
 
-includet("join_cartesian.jl")
+include("join_cartesian.jl")
 
 function _cartesianjoin_test()
   _test()
