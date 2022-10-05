@@ -32,7 +32,7 @@ function _join_cartesian(dsl::AbstractDataset, dsr::AbstractDataset, conditions,
 
   _find_count_for_left(flag, dsl_count, l_len, r_len)
 
-  new_ends = cumsum(dsl_count)  # 累计和
+  new_ends = cumsum(dsl_count)  # 
   total_length = new_ends[end]
 
   if check
@@ -297,7 +297,7 @@ function _fill_left_res(_res, l_col, dsl_count, new_ends, threads)
   # x = IMD._columns(dsl)[j] # 这一步可以隔离
   # 左侧填充
   IMD.@_threadsfor threads for i in eachindex(l_col)# 1:length(l_col)
-    dsl_count[i] == 0 && continue
+    dsl_count[i] == 0 && continue   # = new_ends[i] - new_ends[i-1] = 0
     i == 1 ? lo = 1 : lo = new_ends[i-1] + 1
     hi = new_ends[i]
     IMD._fill_val_join!(_res, lo:hi, l_col[i])
