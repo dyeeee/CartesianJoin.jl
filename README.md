@@ -72,11 +72,13 @@ working...
 
 # Version history
 
-## First release 1.0
+## First release 0.1.0
 
-1.0.1 - Split a join with a timer for performance evaluation.
+0.1.1 - Split a join with a timer for performance evaluation.
 
-1.0.2 - All arguments from IMD.join is supported.
+0.1.2 - All arguments from IMD.join is supported.
+
+0.1.3 - Normal Cartesianjoin supported.
 
 ## Beta
 

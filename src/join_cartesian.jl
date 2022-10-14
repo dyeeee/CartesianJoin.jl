@@ -7,7 +7,8 @@ include("functions.jl")
 
 
 function _join_cartesian(dsl::AbstractDataset, dsr::AbstractDataset, conditions, ::Val{T};
-  onleft, onright, onright_equal, threads::Bool=false, flag=ones(Bool, nrow(dsl) * nrow(dsr)),
+  onleft, onright, onright_equal,
+  threads::Bool=false, flag=ones(Bool, nrow(dsl) * nrow(dsr)),
   makeunique=false, mapformats=[true, true], check=true,
   multiple_match=[false, false], multiple_match_name=:multiple,
   obs_id=[false, false], obs_id_name=:obs_id) where {T}
@@ -21,10 +22,11 @@ function _join_cartesian(dsl::AbstractDataset, dsr::AbstractDataset, conditions,
   l_len = nrow(dsl)
   r_len = nrow(dsr)
 
-  # get flag
-  _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
-  #cross_compare(dsl,dsr,flag,conditions,onleft,onright,threads)
-  #println(flag)
+  # cj with conditions
+  if !isempty(onleft) && !isempty(onright)
+    # get flag
+    @timeit "compute flag vector" _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
+  end
 
   ## new left
   ### step-1
@@ -112,7 +114,8 @@ end
 
 
 function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, conditions, ::Val{T};
-  onleft, onright, onright_equal, threads::Bool=false, flag=ones(Bool, nrow(dsl) * nrow(dsr)),
+  onleft, onright, onright_equal,
+  threads::Bool=false, flag=ones(Bool, nrow(dsl) * nrow(dsr)),
   makeunique=false, mapformats=[true, true], check=true,
   multiple_match=[false, false], multiple_match_name=:multiple,
   obs_id=[false, false], obs_id_name=:obs_id) where {T}
@@ -126,10 +129,12 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
   l_len = nrow(dsl)
   r_len = nrow(dsr)
 
-  # get flag
-  @timeit "compute flag vector" _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
-  #cross_compare(dsl,dsr,flag,conditions,onleft,onright,threads)
-  #println(flag)
+  # cj with conditions
+  if !isempty(onleft) && !isempty(onright)
+    # get flag
+    @timeit "compute flag vector" _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
+  end
+
 
   @timeit "generate new ds" begin
 
@@ -312,7 +317,6 @@ function _fill_right_res(_res, r_col, flag, r_len, threads)
     res = findnext(flag, i)  #  找到i索引之后的下一个符合条件的索引，没填条件默认true
     isnothing(res) && break # 找不到则break
     # j = true || isempty(r) ? first(r) : last(r) 有ranges的才要判断
-    # 超出索引，break
     #@inbounds i = nextind(flag, j)  ## 纯纯的找下一个索引的位置
     indx = res % r_len == 0 ? r_len : res % r_len # r_len
     _res[cnt] = r_col[indx]

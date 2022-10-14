@@ -12,7 +12,7 @@ function _cartesianjoin_test()
 end
 
 function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
-  on=nothing, threads::Bool=true,
+  on=[], threads::Bool=true,
   makeunique=false, mapformats::Union{Bool,Vector{Bool}}=true,
   check=true,
   multiple_match::Union{Bool,Vector{Bool}}=false, multiple_match_name=:multiple,
@@ -42,6 +42,13 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
   end
 
   #(typeof(on) <: AbstractVector{<:Union{AbstractString, Symbol}})
+  if isempty(on) ## cj without any conditions
+    return _join_cartesian(dsl, dsr, [], nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
+      onleft=[], onright=[], onright_equal=[], threads=threads,
+      makeunique=makeunique, mapformats=mapformats, check=check,
+      multiple_match=multiple_match, multiple_match_name=multiple_match_name,
+      obs_id=obs_id, obs_id_name=obs_id_name)
+  end
 
   if (typeof(on) <: AbstractVector{<:Pair{<:IMD.ColumnIndex,<:Any}})
 
@@ -71,7 +78,7 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
     throw(ArgumentError("error `on`. \n e.g.1 on  = [1 => 1, 2 => 2 => isless] (index for right and left columns)\n e.g.2 on  = [:xid => :yid, :x1 => :y1 => isless]\n e.g.3 on  = [\"xid\" => \"yid\", \"x1\" => \"y1\" => isless]"))
   end
 
-  _join_cartesian(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
+  return _join_cartesian(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
     onleft=onleft, onright=onright, onright_equal=onright_equal, threads=threads,
     makeunique=makeunique, mapformats=mapformats, check=check,
     multiple_match=multiple_match, multiple_match_name=multiple_match_name,
@@ -81,7 +88,7 @@ end
 
 
 function cartesianjoin_timer(dsl::AbstractDataset, dsr::AbstractDataset;
-  on=nothing, threads::Bool=true,
+  on=[], threads::Bool=true,
   makeunique=false, mapformats::Union{Bool,Vector{Bool}}=true,
   check=true,
   multiple_match::Union{Bool,Vector{Bool}}=false, multiple_match_name=:multiple,
@@ -108,6 +115,14 @@ function cartesianjoin_timer(dsl::AbstractDataset, dsr::AbstractDataset;
     obs_id = repeat([obs_id], 2)
   else
     length(obs_id) !== 2 && throw(ArgumentError("`obs_id` must be a Bool or a vector of Bool with size two"))
+  end
+
+  if isempty(on) ## cj without any conditions
+    return _join_cartesian_timer(dsl, dsr, [], nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
+      onleft=[], onright=[], onright_equal=[], threads=threads,
+      makeunique=makeunique, mapformats=mapformats, check=check,
+      multiple_match=multiple_match, multiple_match_name=multiple_match_name,
+      obs_id=obs_id, obs_id_name=obs_id_name)
   end
 
   if (typeof(on) <: AbstractVector{<:Pair{<:IMD.ColumnIndex,<:Any}})
@@ -141,7 +156,7 @@ function cartesianjoin_timer(dsl::AbstractDataset, dsr::AbstractDataset;
     throw(ArgumentError("error `on`, e.g. on  = [:xid => :yid, :x1 => :y1 => isless]"))
   end
 
-  _join_cartesian_timer(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
+  return _join_cartesian_timer(dsl, dsr, conditions, nrow(dsr) < typemax(Int32) ? Val(Int32) : Val(Int64),
     onleft=onleft, onright=onright, onright_equal=onright_equal, threads=threads,
     makeunique=makeunique, mapformats=mapformats, check=check,
     multiple_match=multiple_match, multiple_match_name=multiple_match_name,
