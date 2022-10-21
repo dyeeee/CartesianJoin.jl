@@ -5,15 +5,11 @@ module CartesianJoin
 using InMemoryDatasets
 
 
-include("main.jl")   # 主函数入口
+include("main.jl")
 
 
 function __init__()
-  if Threads.nthreads() == 1
-    if get(ENV, "IMD_WARN_THREADS", "1") == "1"
-      @warn "Julia started with single thread, to enable multithreaded functionalities in InMemoryDatasets.jl start Julia with multiple threads."
-    end
-  end
+  @info "CartesianJoin.jl is a join extension package developed based on the high-performance data processing package InMemoryDatasets.jl, which expands the `cartesianjoin` function of the `Dataset` object."
 end
 
 

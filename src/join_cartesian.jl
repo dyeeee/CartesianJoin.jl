@@ -64,11 +64,13 @@ function _join_cartesian(dsl::AbstractDataset, dsr::AbstractDataset, conditions,
   ### step-5
   #println("Nesting")
   for j in eachindex(right_cols) #1:length(right_cols)   # right 的每一列
-    _res = IMD.allocatecol(IMD._columns(dsr)[right_cols[j]], total_length, addmissing=false)  # 空的dsr
 
-    #@timeit "5.2 fill _res" fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], dsr_idx, threads)
-
-    _fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
+    if !isempty(onright)
+      _res = IMD.allocatecol(IMD._columns(dsr)[right_cols[j]], total_length, addmissing=false)  # 空的dsr
+      _fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
+    else
+      _res = _get_right_res_all(IMD._columns(dsr)[right_cols[j]], l_len)
+    end
 
     #println(_res)
     push!(IMD._columns(newds), _res)
@@ -181,13 +183,20 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
       ### step-5
       #println("Nesting")
       for j in eachindex(right_cols) #1:length(right_cols)   # right 的每一列
-        @timeit "5.1 init _res" _res = IMD.allocatecol(IMD._columns(dsr)[right_cols[j]], total_length, addmissing=false)  # 空的dsr
 
-        #@timeit "5.2 fill _res" fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], dsr_idx, threads)
+        if !isempty(onright)
+          @timeit "5.1 init _res" _res = IMD.allocatecol(IMD._columns(dsr)[right_cols[j]], total_length, addmissing=false)  # 空的dsr
 
-        @timeit "5.2 fill _res" _fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
-        # @timeit "5.3 fill _res" _fill_right_res_2(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
-        # println(_res)
+          #@timeit "5.2 fill _res" fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], dsr_idx, threads)
+
+          @timeit "5.2 fill _res" _fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
+          # @timeit "5.3 fill _res" _fill_right_res_2(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
+          # println(_res)
+        else
+          @timeit "5.1 get _res for all CJ" _res = _get_right_res_all(IMD._columns(dsr)[right_cols[j]], l_len)
+        end
+
+
         push!(IMD._columns(newds), _res)
         new_var_name = IMD.make_unique([IMD._names(dsl); IMD._names(dsr)[right_cols[j]]], makeunique=makeunique)[end]
         push!(IMD.index(newds), new_var_name)
@@ -333,4 +342,11 @@ function _fill_right_res(_res, r_col, flag, r_len, threads)
   """
 end
 
+function _get_right_res_all(r_col, l_len)
+  repeat(r_col, l_len)
 
+
+  # 传 _res, l_len, r_len
+  # for i in l_len, _res的i-i+r_len那么长 内容就是r_col，
+  # lo= 1 + (i - 1) * r_len; hi = lo + r_len - 1
+end

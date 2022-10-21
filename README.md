@@ -56,11 +56,15 @@ function fun3(x,y)
   length(x) == length(y)
 end
 
+# Return cartesian join result.
+newds = cartesianjoin(dsl,dsr);
+
+# Cartesian join with conditions. Default function is `isequal()`.
 newds = cartesianjoin(dsl,dsr,on = [:xid=>:yid, :x1=>:y1=>fun1]);
 
+# Cartesian join with multi user defined conditions.
 newds = cartesianjoin(dsl,dsr,
-          on = [:xid=>:yid=>fun2, :x1=>:y1=>fun1, 
-          :x4=>:y4=>:fun4],
+          on = [:xid=>:yid=>fun2, :x1=>:y1=>fun1, :x4=>:y4=>:fun4],
           multiple_match=[true,false],
           obs_id=[true,false]);
 ```
@@ -72,7 +76,7 @@ working...
 
 # Version history
 
-## First release 0.1.0
+## First release 0.1
 
 0.1.1 - Split a join with a timer for performance evaluation.
 
