@@ -28,9 +28,13 @@
 
 6. All parameters related to the join in IMD are supported, including `mapdformats`, `multiple_match` (whether the display is a duplicate match), `obs_id` (displaying the index in the original data set), etc.
 
+7. Use `cartesianjoin_timer(dsl,dsr,on = [:x1=>:y1, :x2=>:y2=>func])` to check the time and memory consumption of each process.
+
 # Examples
 
 ```{julia}
+using Pkg
+Pkg.add("CartesianJoin")
 
 dsl = Dataset(xid = [111,222,333,444,222], 
               x1 = [1,2,1,4,3], 
@@ -71,39 +75,74 @@ newds = cartesianjoin(dsl,dsr,
 
 # Benchmark
 
-working...
+* *size* for dataset: the rows number for both right and left dataset.  All cols number are 5 (type: Int, Int, String, Float, Date).
 
+* *machine* : Mac with 2.9 GHz quad-core Intel Core i7 and 16 GB memory. Thread for Julia and R data.table is set to be 8.
+
+## 1. Cartesianjoin without on conditions. 
+| size\method | crtesianjoin() | R data.table | R data.frame | Python pandas |
+|:-----------:|:--------------:|:------------:|:------------:|:-------------:|
+|     1e2     |     0.95 ms    |    4.89 ms   |   10.16 ms   |    4.49 ms    |
+|     1e3     |    29.90 ms    |   65.69 ms   |    2.57 s    |   177.90 ms   |
+|     1e4     |     5.71 s     |    9.15 s    |       /      |    24.36 s    |
+
+## 2. Inequality join for multiple cols
+
+```{julia}
+@benchmark cartesianjoin(dsl_1e3,dsr_1e3,
+              on = [:x1 => :y1 => isless, :x2 => :y2 => isless, :x4 => :y4 => isless],
+              threads = true, check = false)
+```
+| size\method | crtesianjoin() | R data.table |
+|:-----------:|:--------------:|:------------:|
+|     1e2     |     0.70 ms    |    4.24 ms   |
+|     1e3     |    21.39 ms    |   29.12 ms   |
+|     1e4     |     2.16 s     |    1.92 s    |
+
+
+## 3. Inequality join for multiple cols
+for data.table, do crossjoin and filter by conditions
+
+```{Julia}
+function str_match(x,y)
+  return x[8] === y[8]
+end
+
+@benchmark cartesianjoin(dsl_1e3,dsr_1e3,
+                    on = [:x3 => :y3 => str_match],
+                    threads = true, check = false)
+```
+
+| size\method | crtesianjoin() | R data.table |
+|:-----------:|:--------------:|:------------:|
+|     1e2     |     0.50 ms    |    6.83 ms   |
+|     1e3     |    11.51 ms    |   173.36 ms  |
+|     1e4     |     1.13 s     |    19.18 s   |
 
 # Version history
 
 ## First release 0.1
 
-0.1.1 - Split a join with a timer for performance evaluation.
+0.1.3 - Normal Cartesianjoin supported.
 
 0.1.2 - All arguments from IMD.join is supported.
 
-0.1.3 - Normal Cartesianjoin supported.
+0.1.1 - Split a join with a timer for performance evaluation.
+
 
 ## Beta
 
-#### v1 
-Basic ideas. Using Flag matrix.
+v1 - Basic ideas. Using Flag matrix.
 
-#### v1t
-Multi-threading.
+v1t - Multi-threading.
 
-#### v2
-Vector operation refactoring.
+v2 - Vector operation refactoring.
 
-#### v3
-Better function barriers to further optimize vector operations. 
+v3 - Better function barriers to further optimize vector operations. 
 
-#### v4
-Flag **vector** replaced Flag matrix.
+v4 - Flag **vector** replaced Flag **matrix**.
 
-#### v5
-Better function barriers when computing flag and generating new datset.
+v5 - Better function barriers when computing flag and generating new datset.
 
-#### v6
-Remove findall funtion to minimize allocations.
+v6 - Remove findall funtion to minimize allocations.
 
