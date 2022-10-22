@@ -15,7 +15,9 @@
       # user-defined operations
       return true/false
     end
-    ```
+
+    cartesianjoin(dsl,dsr,on = [:x1 => :y1 => fun])
+  ```
     This also means that not only inequal join or range join, but also arbitrary conditional join.
 
 2. Any number of columns are supported using arbitrary conditional associations.
