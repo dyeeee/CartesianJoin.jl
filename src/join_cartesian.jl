@@ -282,7 +282,7 @@ end
 
 function _left_compare(flag, l_col, r_col, l_len, r_len, fun, threads)
   IMD.@_threadsfor threads for j in 1:l_len  # each row in dsl
-    cur_index = (j - 1) * l_len
+    cur_index = (j - 1) * r_len  # cross join left row to right dataset
     _op_for_dsrcol(flag, fun, cur_index, l_col[j], r_col, r_len)
   end
 end
