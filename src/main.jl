@@ -129,8 +129,8 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
 
   if (typeof(on) <: AbstractVector{<:Pair{<:IMD.ColumnIndex,<:Any}})
 
-    dsr_cols = Symbol[]
-    equalon_dsr_cols = Symbol[]
+    dsr_cols = []
+    equalon_dsr_cols = []
     conditions = Function[]
 
     # on  = [:xid => :yid, :x1 => :y1 => isless]
