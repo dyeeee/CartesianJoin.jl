@@ -18,7 +18,8 @@
 
     cartesianjoin(dsl,dsr,on = [:x1 => :y1 => fun])
   ```
-    This also means that not only inequal join or range join, but also arbitrary conditional join.
+
+This also means that not only inequal join or range join, but also arbitrary conditional join.
 
 2. Any number of columns are supported using arbitrary conditional associations.
 
@@ -31,6 +32,19 @@
 6. All parameters related to the join in IMD are supported, including `mapdformats`, `multiple_match` (whether the display is a duplicate match), `obs_id` (displaying the index in the original data set), etc.
 
 7. Use `cartesianjoin_timer(dsl,dsr,on = [:x1=>:y1, :x2=>:y2=>func])` to check the time and memory consumption of each process.
+
+# Algorithmic flow
+<div align=center>
+<img src="https://github.com/dyeeee/MyGraduationProjectV2_Pod/blob/main/Images/iPad-1.JPEG" width="500"/>
+</div>
+
+<div align=center>
+<img src="https://github.com/dyeeee/MyGraduationProjectV2_Pod/blob/main/Images/iPad-1.JPEG" width="500"/>
+</div>
+
+<div align=center>
+<img src="https://github.com/dyeeee/MyGraduationProjectV2_Pod/blob/main/Images/iPad-1.JPEG" width="500"/>
+</div>
 
 # Examples
 
@@ -75,7 +89,8 @@ newds = cartesianjoin(dsl,dsr,
           obs_id=[true,false]);
 ```
 
-# Benchmark
+# Benchmark 
+## -- working on comparison with DataFrameInterval.jl and FlexiJoin.jl
 
 * *size* for dataset: the rows number for both right and left dataset.  All cols number are 5 (type: Int, Int, String, Float, Date).
 

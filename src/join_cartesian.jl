@@ -134,11 +134,11 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
   # cj with conditions
   if !isempty(onleft) && !isempty(onright)
     # get flag
-    @timeit "compute flag vector" _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
+    @timeit "1. compute flag vector" _cross_compare_vec(dsl, dsr, flag, conditions, onleft, onright, l_len, r_len, threads, mapformats)
   end
 
 
-  @timeit "generate new ds" begin
+  @timeit "2. generate new ds" begin
 
     ## new left
     ### step-1
@@ -179,21 +179,21 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
     ## new right
     #println("Cerating right")
 
-    @timeit "2-5 newds dsr" begin
+    @timeit "2-4 newds dsr" begin
       ### step-5
       #println("Nesting")
       for j in eachindex(right_cols) #1:length(right_cols)   # right 的每一列
 
         if !isempty(onright)
-          @timeit "5.1 init _res" _res = IMD.allocatecol(IMD._columns(dsr)[right_cols[j]], total_length, addmissing=false)  # 空的dsr
+          @timeit "4.1 init _res" _res = IMD.allocatecol(IMD._columns(dsr)[right_cols[j]], total_length, addmissing=false)  # 空的dsr
 
           #@timeit "5.2 fill _res" fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], dsr_idx, threads)
 
-          @timeit "5.2 fill _res" _fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
+          @timeit "4.2 fill _res" _fill_right_res(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
           # @timeit "5.3 fill _res" _fill_right_res_2(_res, IMD._columns(dsr)[right_cols[j]], flag, r_len, threads)
           # println(_res)
         else
-          @timeit "5.1 get _res for all CJ" _res = _get_right_res_all(IMD._columns(dsr)[right_cols[j]], l_len)
+          @timeit "4.1 get _res for all CJ" _res = _get_right_res_all(IMD._columns(dsr)[right_cols[j]], l_len)
         end
 
 
@@ -203,7 +203,9 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
         setformat!(newds, IMD.index(newds)[new_var_name], getformat(dsr, IMD._names(dsr)[right_cols[j]]))
       end
     end
+  end
 
+  @timeit "3. extra arguments" begin
 
     if multiple_match[1]
       multiple_match_name1 = Symbol(multiple_match_name, "_left")
@@ -237,8 +239,10 @@ function _join_cartesian_timer(dsl::AbstractDataset, dsr::AbstractDataset, condi
     end
 
 
+
     #newds #, dsl_count, total_length
   end
+
 
   print_timer()
   #flag
@@ -298,7 +302,7 @@ end
 
 
 function _find_count_for_left(flag, dsl_count, l_len, r_len)
-  for i in 1:l_len
+  for i in 1:l_len  # can be multithread
     lo = 1 + (i - 1) * r_len
     hi = lo + r_len - 1
     #push!(dsl_count,count(==(true),flag[lo:hi]))

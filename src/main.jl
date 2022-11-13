@@ -136,7 +136,6 @@ function cartesianjoin(dsl::AbstractDataset, dsr::AbstractDataset;
     # on  = [:xid => :yid, :x1 => :y1 => isless]
     for element in map(x -> x.second, on)
       if typeof(element) <: Pair
-        # TODO more function check
         !(element.second isa Function) && throw(ArgumentError("Need Function"))
         push!(dsr_cols, element.first)
         push!(conditions, element.second)
