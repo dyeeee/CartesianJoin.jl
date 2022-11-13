@@ -10,15 +10,15 @@
 # Features
 
 1. Supports arbitrary user-defined Boolean functions as join conditions.  This also means that not only inequal join or range join, but also arbitrary conditional join.
-	```{Julia}
-    function fun(left_x, right_x)
-      # user-defined operations
-      return true/false
-    end
+```{Julia}
+  function fun(left_x, right_x)
+    # user-defined operations
+    return true/false
+  end
 
-    cartesianjoin(dsl,dsr,on = [:x1 => :y1 => fun])
-  ```
-  
+  cartesianjoin(dsl,dsr,on = [:x1 => :y1 => fun])
+```
+
 2. Any number of columns are supported using arbitrary conditional associations.
 
 3. Enabling multi-threading for acceleration, the performance better than implementing the same data operations in R.
