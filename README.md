@@ -9,7 +9,7 @@
 
 # Features
 
-1. Supports arbitrary user-defined Boolean functions as join conditions. 
+1. Supports arbitrary user-defined Boolean functions as join conditions.  This also means that not only inequal join or range join, but also arbitrary conditional join.
 	```{Julia}
     function fun(left_x, right_x)
       # user-defined operations
@@ -18,9 +18,7 @@
 
     cartesianjoin(dsl,dsr,on = [:x1 => :y1 => fun])
   ```
-
-This also means that not only inequal join or range join, but also arbitrary conditional join.
-
+  
 2. Any number of columns are supported using arbitrary conditional associations.
 
 3. Enabling multi-threading for acceleration, the performance better than implementing the same data operations in R.
@@ -34,16 +32,25 @@ This also means that not only inequal join or range join, but also arbitrary con
 7. Use `cartesianjoin_timer(dsl,dsr,on = [:x1=>:y1, :x2=>:y2=>func])` to check the time and memory consumption of each process.
 
 # Algorithmic flow
+
+## Basic flow
 <div align=center>
-<img src="https://github.com/dyeeee/MyGraduationProjectV2_Pod/blob/main/Images/iPad-1.JPEG" width="500"/>
+<img src="https://github.com/dyeeee/CartesianJoin.jl/blob/main/files/flow/CJ_pces12.png" width="500"/>
 </div>
 
+## Computing flag
 <div align=center>
-<img src="https://github.com/dyeeee/MyGraduationProjectV2_Pod/blob/main/Images/iPad-1.JPEG" width="500"/>
+<img src="https://github.com/dyeeee/CartesianJoin.jl/blob/main/files/flow/flag1.png" width="500"/>
 </div>
 
+##  Filling left
 <div align=center>
-<img src="https://github.com/dyeeee/MyGraduationProjectV2_Pod/blob/main/Images/iPad-1.JPEG" width="500"/>
+<img src="https://github.com/dyeeee/CartesianJoin.jl/blob/main/files/flow/flag2.png" width="500"/>
+</div>
+
+##  Filling right
+<div align=center>
+<img src="https://github.com/dyeeee/CartesianJoin.jl/blob/main/files/flow/flag3.png" width="500"/>
 </div>
 
 # Examples
