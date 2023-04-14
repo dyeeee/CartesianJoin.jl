@@ -7,6 +7,9 @@
 
 [CartesianJoin.jl]() is a join extension package developed based on the high-performance data processing package [InMemoryDatasets](https://github.com/sl-solution/InMemoryDatasets.jl), which expands the `cartesianjoin` function of the `Dataset` object. The performance of this package was developed according to the requirements of IMD, including minimal allocations and high operating speeds.
 
+# Updating
+...
+
 # Features
 
 1. Supports arbitrary user-defined Boolean functions as join conditions.  This also means that not only inequal join or range join, but also arbitrary conditional join.
